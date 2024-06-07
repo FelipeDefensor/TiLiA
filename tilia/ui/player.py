@@ -34,8 +34,7 @@ class PlayerToolbar(QToolBar):
         self.stop_action = actions.get_qaction(TiliaAction.MEDIA_STOP)
         self.addAction(self.play_action)
         self.addAction(self.stop_action)
-        self.time_label = QLabel(f"{self.current_time_string}/{self.duration_string}")
-        self.addWidget(self.time_label)
+        self.add_time_label()
 
         self.addSeparator()
 
@@ -93,6 +92,11 @@ class PlayerToolbar(QToolBar):
     def destroy(self):
         stop_listening_to_all(self)
         super().destroy()
+
+    def add_time_label(self):
+        self.time_label = QLabel(f"{self.current_time_string}/{self.duration_string}")
+        self.time_label.setMargin(3)
+        self.addWidget(self.time_label)
 
     def add_volume_toggle(self):
         def on_volume_toggle(checked: bool) -> None:
