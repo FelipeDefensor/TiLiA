@@ -167,7 +167,6 @@ class YouTubePlayer(Player):
         else:
             self.view.loadFinished.connect(load_video)
 
-        post(Post.PLAYER_DISABLE_CONTROLS)  # first play command must be given via YT ui
         return True
 
     def _play_loop(self) -> None:
@@ -209,7 +208,7 @@ class YouTubePlayer(Player):
 
     def _engine_exit(self):
         del self.view
-        post(Post.PLAYER_ENABLE_CONTROLS)
+        post(Post.PLAYER_DISABLE_CONTROLS)
 
     def _engine_get_current_time(self) -> float:
         return self.current_time

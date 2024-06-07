@@ -7,6 +7,8 @@ from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput, QAudio
 
 from .base import Player
 
+from tilia.requests import Post, post
+
 
 class QtPlayer(Player):
     MEDIA_TYPE = ""
@@ -17,6 +19,10 @@ class QtPlayer(Player):
         self.player.durationChanged.connect(self.on_media_duration_available)
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
+
+    def on_media_load_done(self, path, start, end):
+        super().on_media_load_done(path, start, end)
+        post(Post.PLAYER_ENABLE_CONTROLS)
 
     def on_media_duration_available(self, duration):
         super().on_media_duration_available(duration / 1000)
@@ -56,6 +62,8 @@ class QtPlayer(Player):
 
     def _engine_exit(self):
         self.player = None
+        post(Post.PLAYER_DISABLE_CONTROLS)
+
     def _engine_set_volume(self, volume: int) -> None:
         log_volume = QAudio.convertVolume(
             volume / 100.0, 

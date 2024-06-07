@@ -45,6 +45,8 @@ class PlayerToolbar(QToolBar):
 
         self.add_playback_rate_spinbox()
 
+        self.setEnabled(False)
+
     def _setup_requests(self):
         LISTENS = {
             (Post.PLAYER_CURRENT_TIME_CHANGED, self.on_player_current_time_changed), 
@@ -85,12 +87,11 @@ class PlayerToolbar(QToolBar):
         self.time_label.setText(f"{self.current_time_string}/{self.duration_string}")
 
     def on_disable_controls(self):
-        self.play_action.setEnabled(False)
-        self.stop_action.setEnabled(False)
+        self.setEnabled(False)
 
     def on_enable_controls(self):
-        self.play_action.setEnabled(True)
-        self.stop_action.setEnabled(True)
+        self.reset()
+        self.setEnabled(True)
 
     def destroy(self):
         stop_listening_to_all(self)
@@ -193,3 +194,12 @@ class PlayerToolbar(QToolBar):
         self.pr_spinbox.setValue(self.last_playback_rate)
         self.pr_spinbox.setFocus()
         self.pr_spinbox.blockSignals(False)
+
+    def reset(self):
+        self.blockSignals(True)
+        self.play_toggle_action.setChecked(False)
+        self.volume_toggle_action.setChecked(False)
+        self.volume_slider.setValue(100)
+        self.last_playback_rate = 1
+        self.pr_spinbox.setValue(1)
+        self.blockSignals(False)
