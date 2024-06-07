@@ -96,6 +96,8 @@ class Post(Enum):
     PLAYER_EXPORT_AUDIO = auto()
     PLAYER_MEDIA_UNLOADED = auto()
     PLAYER_PAUSED = auto()
+    PLAYER_PLAYBACK_RATE_SET = auto()
+    PLAYER_PLAYBACK_RATE_TRY = auto()
     PLAYER_REQUEST_TO_LOAD_MEDIA = auto()
     PLAYER_REQUEST_TO_UNLOAD_MEDIA = auto()
     PLAYER_SEEK = auto()

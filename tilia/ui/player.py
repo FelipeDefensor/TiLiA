@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QToolBar,
     QLabel,
     QSlider,
+    QDoubleSpinBox,
 )
 
 from PyQt6.QtGui import QIcon, QAction, QPixmap
@@ -13,7 +14,8 @@ from tilia.media.player.base import MediaTimeChangeReason
 from tilia.ui import actions
 from tilia.ui.actions import TiliaAction
 from tilia.ui.format import format_media_time
-from tilia.requests import Post, listen, stop_listening_to_all
+from tilia.requests import Post, post, listen, stop_listening_to_all, get, Get
+
 
 
 class PlayerToolbar(QToolBar):
@@ -25,6 +27,8 @@ class PlayerToolbar(QToolBar):
 
         self.current_time_string = format_media_time(0)
         self.duration_string = format_media_time(0)
+
+        self.last_playback_rate = 1.0
 
         self.play_action = actions.get_qaction(TiliaAction.MEDIA_TOGGLE_PLAY_PAUSE)
         self.stop_action = actions.get_qaction(TiliaAction.MEDIA_STOP)
@@ -38,6 +42,10 @@ class PlayerToolbar(QToolBar):
         self.add_volume_toggle()
         self.add_volume_slider()
 
+        self.addSeparator()
+
+        self.add_playback_rate_spinbox()
+
     def _setup_requests(self):
         LISTENS = {
             (Post.PLAYER_CURRENT_TIME_CHANGED, self.on_player_current_time_changed), 
@@ -45,7 +53,8 @@ class PlayerToolbar(QToolBar):
             (Post.PLAYER_MEDIA_UNLOADED, self.on_media_unload), 
             (Post.PLAYER_STOPPED, self.on_stop), 
             (Post.PLAYER_DISABLE_CONTROLS, self.on_disable_controls), 
-            (Post.PLAYER_ENABLE_CONTROLS, self.on_enable_controls)
+            (Post.PLAYER_ENABLE_CONTROLS, self.on_enable_controls),
+            (Post.PLAYER_PLAYBACK_RATE_SET, self.on_playback_rate_set),
         }
 
         for post, callback in LISTENS:
@@ -117,3 +126,35 @@ class PlayerToolbar(QToolBar):
         self.volume_slider.setToolTip("Volume")
         self.volume_slider.valueChanged.connect(lambda value: on_volume_slide(value))
         self.addWidget(self.volume_slider)
+    
+    def add_playback_rate_spinbox(self):
+        def on_playback_rate_changed(rate: float) -> None:
+            post(Post.PLAYER_PLAYBACK_RATE_TRY, rate)
+
+            if get(Get.MEDIA_TYPE) == "youtube":
+                self.pr_spinbox_silent_set()
+
+            else:
+                self.last_playback_rate = rate
+
+        self.pr_spinbox = QDoubleSpinBox()
+        self.pr_spinbox.setMinimum(0)
+        self.pr_spinbox.setValue(1.0)
+        self.pr_spinbox.setSingleStep(0.25)
+        self.pr_spinbox.setFixedWidth(self.pr_spinbox.height() // 8)
+        self.pr_spinbox.setSuffix(" x")
+        self.pr_spinbox.setToolTip("Playback Rate")
+        self.pr_spinbox.setKeyboardTracking(False)
+        self.pr_spinbox.valueChanged.connect(on_playback_rate_changed)
+        self.addWidget(self.pr_spinbox)
+    
+    def on_playback_rate_set(self, rate: float) -> None:
+        self.last_playback_rate = rate
+        self.pr_spinbox_silent_set()
+
+    def pr_spinbox_silent_set(self) -> None:
+        self.pr_spinbox.blockSignals(True)
+        self.pr_spinbox.clearFocus()
+        self.pr_spinbox.setValue(self.last_playback_rate)
+        self.pr_spinbox.setFocus()
+        self.pr_spinbox.blockSignals(False)

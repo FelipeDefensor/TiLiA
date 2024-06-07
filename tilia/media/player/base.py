@@ -58,6 +58,7 @@ class Player(ABC):
             (Post.PLAYER_STOP, self.stop),
             (Post.PLAYER_VOLUME_CHANGE, self.on_volume_change),
             (Post.PLAYER_VOLUME_MUTE, self.on_volume_mute),
+            (Post.PLAYER_PLAYBACK_RATE_TRY, self.on_playback_rate_try),
             (Post.PLAYER_SEEK, self.on_seek),
             (Post.PLAYER_SEEK_IF_NOT_PLAYING, functools.partial(self.on_seek, if_paused=True)),
             (Post.PLAYER_REQUEST_TO_UNLOAD_MEDIA, self.unload_media),
@@ -67,7 +68,8 @@ class Player(ABC):
 
         SERVES = {
             (Get.MEDIA_CURRENT_TIME, lambda: self.current_time),
-            (Get.MEDIA_PATH, lambda: self.media_path)
+            (Get.MEDIA_PATH, lambda: self.media_path),
+            (Get.MEDIA_TYPE, lambda: self.MEDIA_TYPE)
         }
 
         for post, callback in LISTENS:
@@ -171,6 +173,9 @@ class Player(ABC):
 
     def on_volume_mute(self, is_muted: bool) -> None:
         self._engine_set_mute(is_muted)
+
+    def on_playback_rate_try(self, playback_rate: float) -> None:
+        self._engine_try_playback_rate(playback_rate)
 
     def on_seek(self, time: float, if_paused: bool = False) -> None:
         if if_paused and self.is_playing:
@@ -279,6 +284,12 @@ class Player(ABC):
 
     @abstractmethod
     def _engine_set_mute(self, is_muted: bool) -> None: ...
+
+    @abstractmethod
+    def _engine_try_playback_rate(self, playback_rate: float) -> None: ...
+
+    @abstractmethod
+    def _engine_set_playback_rate(self, playback_rate: float) -> None: ...
 
     def __repr__(self):
         return f"{type(self)}-{id(self)}"

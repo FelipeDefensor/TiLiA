@@ -67,3 +67,9 @@ class QtPlayer(Player):
     def _engine_set_mute(self, is_muted: bool) -> None:
         self.audio_output.setMuted(is_muted)
 
+    def _engine_try_playback_rate(self, playback_rate: float) -> None:
+        self.player.setPlaybackRate(playback_rate)
+
+    def _engine_set_playback_rate(self, playback_rate: float) -> None:
+        pass
+

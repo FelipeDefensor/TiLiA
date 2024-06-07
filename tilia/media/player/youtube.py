@@ -19,12 +19,13 @@ from tilia.requests import Post, post
 
 
 class PlayerTracker(QObject):
-    def __init__(self, page, on_duration_available, set_current_time, set_is_playing):
+    def __init__(self, page, on_duration_available, set_current_time, set_is_playing, set_playback_rate):
         super().__init__()
         self.on_duration_available = on_duration_available
         self.set_current_time = set_current_time
         self.page = page
         self.set_is_playing = set_is_playing
+        self.set_playback_rate = set_playback_rate
 
     @pyqtSlot("float")
     def on_new_time(self, time):
@@ -44,6 +45,10 @@ class PlayerTracker(QObject):
             self.set_is_playing(True)
         else:
             self.set_is_playing(False)
+
+    @pyqtSlot("float")
+    def on_set_playback_rate(self, playback_rate: float):
+        self.set_playback_rate(playback_rate)
 
     class State(Enum):
         UNSTARTED = -1
@@ -96,6 +101,7 @@ class YouTubePlayer(Player):
             self.on_media_duration_available,
             functools.partial(setattr, self, "current_time"),
             self.set_is_playing,
+            self._engine_set_playback_rate
         )
         self.channel.registerObject("backend", self.shared_object)
         self.view.page().setWebChannel(self.channel)
@@ -208,4 +214,10 @@ class YouTubePlayer(Player):
             self.view.page().runJavaScript("mute()")
         else:
             self.view.page().runJavaScript("unMute()")
+
+    def _engine_try_playback_rate(self, playback_rate: float) -> None:
+        self.view.page().runJavaScript(f"tryPlaybackRate({playback_rate})")
+
+    def _engine_set_playback_rate(self, playback_rate: float) -> None:
+        post(Post.PLAYER_PLAYBACK_RATE_SET, playback_rate)
 
