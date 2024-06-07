@@ -106,6 +106,8 @@ class Post(Enum):
     PLAYER_TOGGLE_PLAY_PAUSE = auto()
     PLAYER_UNPAUSED = auto()
     PLAYER_URL_CHANGED = auto()
+    PLAYER_VOLUME_CHANGE = auto()
+    PLAYER_VOLUME_MUTE = auto()
     REQUEST_CHANGE_TIMELINE_WIDTH = auto()
     REQUEST_CLEAR_ALL_TIMELINES = auto()
     REQUEST_CLEAR_TIMELINE = auto()

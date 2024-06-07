@@ -2,7 +2,12 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QToolBar,
     QLabel,
+    QSlider,
 )
+
+from PyQt6.QtGui import QIcon, QAction, QPixmap
+
+from PyQt6.QtCore import Qt
 
 from tilia.media.player.base import MediaTimeChangeReason
 from tilia.ui import actions
@@ -27,6 +32,11 @@ class PlayerToolbar(QToolBar):
         self.addAction(self.stop_action)
         self.time_label = QLabel(f"{self.current_time_string}/{self.duration_string}")
         self.addWidget(self.time_label)
+
+        self.addSeparator()
+
+        self.add_volume_toggle()
+        self.add_volume_slider()
 
     def _setup_requests(self):
         LISTENS = {
@@ -74,3 +84,36 @@ class PlayerToolbar(QToolBar):
     def destroy(self):
         stop_listening_to_all(self)
         super().destroy()
+
+    def add_volume_toggle(self):
+        def on_volume_toggle(checked: bool) -> None:
+            post(Post.PLAYER_VOLUME_MUTE, checked)
+            self.volume_slider.setEnabled(not checked)
+
+        def on_changed() -> None:
+            self.volume_toggle_action.blockSignals(True)
+            self.volume_toggle_action.setToolTip("Unmute"if self.volume_toggle_action.isChecked() else "Mute")
+            self.volume_toggle_action.blockSignals(False)
+
+        volume_toggle_icon = QIcon()
+        # volume_toggle_icon.addPixmap(QStyle.standardIcon(self, QStyle.StandardPixmap.SP_MediaVolume), QIcon.Mode.Normal, QIcon.State.On)
+        # volume_toggle_icon.addPixmap(QStyle.standardIcon(QStyle(), QStyle.StandardPixmap.SP_MediaVolumeMuted), QIcon.Mode.Normal, QIcon.State.Off)
+        self.volume_toggle_action = QAction(self)
+        self.volume_toggle_action.setText("Toggle Volume")
+        self.volume_toggle_action.triggered.connect(lambda checked: on_volume_toggle(checked))
+        self.volume_toggle_action.changed.connect(on_changed)
+        self.volume_toggle_action.setIcon(volume_toggle_icon)
+        self.volume_toggle_action.setToolTip("Mute")
+        self.volume_toggle_action.setCheckable(True)
+        self.addAction(self.volume_toggle_action)
+    
+    def add_volume_slider(self):
+        def on_volume_slide(value: int) -> None:
+            post(Post.PLAYER_VOLUME_CHANGE, value)
+        self.volume_slider = QSlider(Qt.Orientation.Horizontal)
+        self.volume_slider.setMinimum(0)
+        self.volume_slider.setMaximum(100)
+        self.volume_slider.setValue(100)
+        self.volume_slider.setToolTip("Volume")
+        self.volume_slider.valueChanged.connect(lambda value: on_volume_slide(value))
+        self.addWidget(self.volume_slider)

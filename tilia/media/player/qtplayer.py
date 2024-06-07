@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 
 from PyQt6.QtCore import QUrl
-from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput, QAudio
 
 from .base import Player
 
@@ -56,3 +56,14 @@ class QtPlayer(Player):
 
     def _engine_exit(self):
         self.player = None
+    def _engine_set_volume(self, volume: int) -> None:
+        log_volume = QAudio.convertVolume(
+            volume / 100.0, 
+            QAudio.VolumeScale.LinearVolumeScale, 
+            QAudio.VolumeScale.LogarithmicVolumeScale
+        )
+        self.audio_output.setVolume(log_volume)
+
+    def _engine_set_mute(self, is_muted: bool) -> None:
+        self.audio_output.setMuted(is_muted)
+

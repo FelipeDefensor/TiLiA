@@ -199,3 +199,13 @@ class YouTubePlayer(Player):
 
     def _engine_get_current_time(self) -> float:
         return self.current_time
+
+    def _engine_set_volume(self, volume: int) -> None:
+        self.view.page().runJavaScript(f"setVolume({volume})")
+
+    def _engine_set_mute(self, is_muted: bool) -> None:
+        if is_muted:
+            self.view.page().runJavaScript("mute()")
+        else:
+            self.view.page().runJavaScript("unMute()")
+
