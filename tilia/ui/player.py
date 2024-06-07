@@ -16,6 +16,7 @@ from tilia.ui.actions import TiliaAction
 from tilia.ui.format import format_media_time
 from tilia.requests import Post, post, listen, stop_listening_to_all, get, Get
 
+from pathlib import Path
 
 
 class PlayerToolbar(QToolBar):
@@ -30,9 +31,8 @@ class PlayerToolbar(QToolBar):
 
         self.last_playback_rate = 1.0
 
-        self.play_action = actions.get_qaction(TiliaAction.MEDIA_TOGGLE_PLAY_PAUSE)
+        self.add_play_toggle()
         self.stop_action = actions.get_qaction(TiliaAction.MEDIA_STOP)
-        self.addAction(self.play_action)
         self.addAction(self.stop_action)
         self.add_time_label()
 
@@ -60,14 +60,17 @@ class PlayerToolbar(QToolBar):
             listen(self, post, callback)
 
     def on_player_current_time_changed(
-        self, audio_time: float, _: MediaTimeChangeReason
+        self, audio_time: float, reason: MediaTimeChangeReason
     ) -> None:
         self.current_time_string = format_media_time(audio_time)
         self.update_time_string()
+        if reason is MediaTimeChangeReason.PLAYBACK:
+            self._play_silent_set()
 
     def on_stop(self) -> None:
         self.current_time_string = format_media_time(0)
         self.update_time_string()
+        self.play_toggle_action.setChecked(False)
 
     def on_media_duration_changed(self, duration: float):
         self.duration_string = format_media_time(duration)
@@ -92,6 +95,34 @@ class PlayerToolbar(QToolBar):
     def destroy(self):
         stop_listening_to_all(self)
         super().destroy()
+
+    def add_play_toggle(self):
+        def on_play_toggle(checked: bool) -> None:
+            post(Post.PLAYER_TOGGLE_PLAY_PAUSE, checked)
+
+        def update_tooltip() -> None:            
+            self.play_toggle_action.blockSignals(True)
+            self.play_toggle_action.setToolTip("Pause (Space)" if self.play_toggle_action.isChecked() else "Play (Space)")
+            self.play_toggle_action.blockSignals(False)
+
+        play_toggle_icon = QIcon()
+        play_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "play15.png"))), QIcon.Mode.Normal, QIcon.State.Off)
+        play_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "pause15.png"))), QIcon.Mode.Normal, QIcon.State.On)
+        
+        self.play_toggle_action = QAction(self)
+        self.play_toggle_action.setText("Play / Pause")
+        self.play_toggle_action.triggered.connect(lambda checked: on_play_toggle(checked))
+        self.play_toggle_action.changed.connect(update_tooltip)
+        self.play_toggle_action.setToolTip("Play (Space)")
+        self.play_toggle_action.setCheckable(True)
+        self.play_toggle_action.setIcon(play_toggle_icon)
+        self.play_toggle_action.setShortcut("Space")
+        self.addAction(self.play_toggle_action)
+
+    def _play_silent_set(self):
+        self.play_toggle_action.blockSignals(True)
+        self.play_toggle_action.setChecked(True)
+        self.play_toggle_action.blockSignals(False)
 
     def add_time_label(self):
         self.time_label = QLabel(f"{self.current_time_string}/{self.duration_string}")

@@ -127,7 +127,7 @@ class Player(ABC):
         self.is_playing = False
         post(Post.PLAYER_MEDIA_UNLOADED)
 
-    def toggle_play(self):
+    def toggle_play(self, toggle_is_playing: bool):
         if not self.media_path:
             post(
                 Post.DISPLAY_ERROR,
@@ -136,7 +136,7 @@ class Player(ABC):
             )
             return
 
-        if not self.is_playing:
+        if toggle_is_playing:
             self._engine_play()
             self.is_playing = True
             self.start_play_loop()
