@@ -46,6 +46,14 @@ class PlayerTracker(QObject):
         else:
             self.set_is_playing(False)
 
+    @pyqtSlot(str)
+    def display_error(self, message: str) -> None:
+        post(
+            Post.DISPLAY_ERROR,
+            title="YouTube Player",
+            message=message
+        )
+
     @pyqtSlot("float")
     def on_set_playback_rate(self, playback_rate: float):
         self.set_playback_rate(playback_rate)
