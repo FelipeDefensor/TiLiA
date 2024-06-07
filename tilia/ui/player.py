@@ -10,13 +10,14 @@ from PyQt6.QtGui import QIcon, QAction, QPixmap
 
 from PyQt6.QtCore import Qt
 
-from tilia.media.player.base import MediaTimeChangeReason
 from tilia.ui import actions
 from tilia.ui.actions import TiliaAction
 from tilia.ui.format import format_media_time
 from tilia.requests import Post, post, listen, stop_listening_to_all, get, Get
 
 from pathlib import Path
+
+from enum import Enum, auto
 
 
 class PlayerToolbar(QToolBar):
@@ -34,6 +35,7 @@ class PlayerToolbar(QToolBar):
         self.add_play_toggle()
         self.stop_action = actions.get_qaction(TiliaAction.MEDIA_STOP)
         self.addAction(self.stop_action)
+        self.add_loop_toggle()
         self.add_time_label()
 
         self.addSeparator()
@@ -55,24 +57,22 @@ class PlayerToolbar(QToolBar):
             (Post.PLAYER_STOPPED, self.on_stop), 
             (Post.PLAYER_DISABLE_CONTROLS, self.on_disable_controls), 
             (Post.PLAYER_ENABLE_CONTROLS, self.on_enable_controls),
-            (Post.PLAYER_PLAYBACK_RATE_SET, self.on_playback_rate_set),
+            (Post.PLAYER_UI_UPDATE, self.on_ui_update_silent)
         }
 
         for post, callback in LISTENS:
             listen(self, post, callback)
 
     def on_player_current_time_changed(
-        self, audio_time: float, reason: MediaTimeChangeReason
+        self, audio_time: float, *_
     ) -> None:
         self.current_time_string = format_media_time(audio_time)
         self.update_time_string()
-        if reason is MediaTimeChangeReason.PLAYBACK:
-            self._play_silent_set()
 
     def on_stop(self) -> None:
         self.current_time_string = format_media_time(0)
         self.update_time_string()
-        self.play_toggle_action.setChecked(False)
+        self.on_ui_update_silent(PlayerToolbarElement.TOGGLE_PLAY_PAUSE, False)
 
     def on_media_duration_changed(self, duration: float):
         self.duration_string = format_media_time(duration)
@@ -92,6 +92,33 @@ class PlayerToolbar(QToolBar):
     def on_enable_controls(self):
         self.reset()
         self.setEnabled(True)
+
+    def on_ui_update_silent(self, element_to_set, value):
+        match element_to_set:
+            case PlayerToolbarElement.TOGGLE_PLAY_PAUSE:
+                element = self.play_toggle_action
+            case PlayerToolbarElement.TOGGLE_LOOP:
+                element = self.loop_toggle_action
+            case PlayerToolbarElement.TOGGLE_VOLUME:
+                element = self.volume_toggle_action
+            case PlayerToolbarElement.SLIDER_VOLUME:
+                element = self.volume_slider
+            case PlayerToolbarElement.SPINBOX_PLAYBACK:
+                self.last_playback_rate = value
+                self.pr_spinbox_update_silent()
+                return
+            case _:
+                post(Post.DISPLAY_ERROR, "Updating Player Toolbar", "Unknown element selected.")
+
+        element.blockSignals(True)
+        try:
+            if element_to_set in [PlayerToolbarElement.TOGGLE_PLAY_PAUSE, PlayerToolbarElement.TOGGLE_LOOP, PlayerToolbarElement.TOGGLE_VOLUME]:
+                element.setChecked(value)
+            else:
+                element.setValue(value)
+        except:
+            post(Post.DISPLAY_ERROR, "Updating Player Toolbar", f"Unable to set {element_to_set} with value {value} of type {type(value)}.")
+        element.blockSignals(False)
 
     def destroy(self):
         stop_listening_to_all(self)
@@ -119,10 +146,20 @@ class PlayerToolbar(QToolBar):
         self.play_toggle_action.setShortcut("Space")
         self.addAction(self.play_toggle_action)
 
-    def _play_silent_set(self):
-        self.play_toggle_action.blockSignals(True)
-        self.play_toggle_action.setChecked(True)
-        self.play_toggle_action.blockSignals(False)
+    def add_loop_toggle(self):
+        def on_loop_changed(checked: bool) -> None:
+            post(Post.PLAYER_TOGGLE_LOOP, checked)
+
+        loop_toggle_icon = QIcon()
+        loop_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "loop15.png"))), QIcon.Mode.Normal, QIcon.State.On)
+        loop_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "no_loop15.png"))), QIcon.Mode.Normal, QIcon.State.Off)
+        self.loop_toggle_action = QAction(self)
+        self.loop_toggle_action.setText("Toggle Loop")
+        self.loop_toggle_action.triggered.connect(lambda checked: on_loop_changed(checked))
+        self.loop_toggle_action.setIcon(loop_toggle_icon)
+        self.loop_toggle_action.setToolTip("Toggle Loop")
+        self.loop_toggle_action.setCheckable(True)
+        self.addAction(self.loop_toggle_action)
 
     def add_time_label(self):
         self.time_label = QLabel(f"{self.current_time_string}/{self.duration_string}")
@@ -167,7 +204,7 @@ class PlayerToolbar(QToolBar):
             post(Post.PLAYER_PLAYBACK_RATE_TRY, rate)
 
             if get(Get.MEDIA_TYPE) == "youtube":
-                self.pr_spinbox_silent_set()
+                self.pr_spinbox_update_silent()
 
             else:
                 self.last_playback_rate = rate
@@ -182,16 +219,11 @@ class PlayerToolbar(QToolBar):
         self.pr_spinbox.setKeyboardTracking(False)
         self.pr_spinbox.valueChanged.connect(on_playback_rate_changed)
         self.addWidget(self.pr_spinbox)
-    
-    def on_playback_rate_set(self, rate: float) -> None:
-        self.last_playback_rate = rate
-        self.pr_spinbox_silent_set()
 
-    def pr_spinbox_silent_set(self) -> None:
+    def pr_spinbox_update_silent(self) -> None:
         self.pr_spinbox.blockSignals(True)
         self.pr_spinbox.clearFocus()
         self.pr_spinbox.setValue(self.last_playback_rate)
-        self.pr_spinbox.setFocus()
         self.pr_spinbox.blockSignals(False)
 
     def reset(self):
@@ -199,6 +231,14 @@ class PlayerToolbar(QToolBar):
         self.play_toggle_action.setChecked(False)
         self.volume_toggle_action.setChecked(False)
         self.volume_slider.setValue(100)
+        self.loop_toggle_action.setChecked(False)
         self.last_playback_rate = 1
         self.pr_spinbox.setValue(1)
         self.blockSignals(False)
+
+class PlayerToolbarElement(Enum):
+    TOGGLE_PLAY_PAUSE = auto()
+    TOGGLE_LOOP = auto()
+    TOGGLE_VOLUME = auto()
+    SLIDER_VOLUME = auto()
+    SPINBOX_PLAYBACK = auto()

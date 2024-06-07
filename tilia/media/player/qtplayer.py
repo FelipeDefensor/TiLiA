@@ -81,3 +81,5 @@ class QtPlayer(Player):
     def _engine_set_playback_rate(self, playback_rate: float) -> None:
         pass
 
+    def _engine_loop(self, is_looping: bool) -> None:
+        self.player.setLoops(QMediaPlayer.Loops.Infinite if is_looping else QMediaPlayer.Loops.Once)

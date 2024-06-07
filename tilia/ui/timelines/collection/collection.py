@@ -81,6 +81,7 @@ class TimelineUIs:
         self._setup_auto_scroll()
         self.auto_scroll_enabled = settings.get("general", "auto-scroll")
         self.selected_time = get(Get.MEDIA_CURRENT_TIME)
+        self.loop_time = (self.selected_time, self.selected_time)
 
     def __str__(self) -> str:
         return self.__class__.__name__ + "-" + str(id(self))
@@ -141,6 +142,7 @@ class TimelineUIs:
             (Post.SLIDER_DRAG, self.on_slider_drag),
             (Post.SLIDER_DRAG_END, lambda: self.set_is_dragging(False)),
             (Post.SLIDER_DRAG_START, lambda: self.set_is_dragging(True)),
+            (Post.PLAYER_CURRENT_LOOP_CHANGED, self.on_loop_change),
             (Post.PLAYER_CURRENT_TIME_CHANGED, self.on_media_time_change),
             (Post.VIEW_ZOOM_IN, self.on_zoom_in),
             (Post.VIEW_ZOOM_OUT, self.on_zoom_out),
@@ -160,6 +162,7 @@ class TimelineUIs:
             (Get.TIMELINE_UI_ELEMENT, self.get_timeline_ui_element),
             (Get.TIMELINE_ELEMENTS_SELECTED, self.get_timeline_elements_selected),
             (Get.SELECTED_TIME, self.get_selected_time),
+            (Get.LOOP_TIME, self.get_loop_time),
             (Get.FIRST_TIMELINE_UI_IN_SELECT_ORDER, self.get_first_timeline_ui_in_select_order)
         }
 
@@ -226,7 +229,7 @@ class TimelineUIs:
             component_kind, component_id
         )
 
-    def on_timeline_component_deleted(self, _: TlKind, tl_id: int, component_id: int):
+    def on_timeline_component_deleted(self, _: TlKind, tl_id: int, component_id: int, __: bool):
         self.get_timeline_ui(tl_id).on_timeline_component_deleted(component_id)
 
     def on_timeline_component_set_data_done(
@@ -295,6 +298,8 @@ class TimelineUIs:
     def update_height(self):
         self.update_timeline_uis_position()
         self.set_playback_lines_position(get(Get.MEDIA_CURRENT_TIME))
+        (loop_start, loop_end) = get(Get.LOOP_TIME)
+        self.on_loop_change(loop_start, loop_end)
 
     def update_level_count(self):
         self.update_height()
@@ -816,6 +821,15 @@ class TimelineUIs:
             return
 
         timeline_ui.scene.set_playback_line_pos(get_x_by_time(time))
+    
+    def on_loop_change(self, start_time: float, end_time: float) -> None:
+        self.loop_time = (start_time, end_time)
+        for tl_ui in self:
+            self.change_loop_box_position(tl_ui, start_time, end_time)
+
+    @staticmethod
+    def change_loop_box_position(timeline_ui: TimelineUI, start_time: float, end_time: float):
+        timeline_ui.scene.set_loop_box_position(get_x_by_time(start_time), get_x_by_time(end_time))
 
     def on_timelines_crop_done(self):
         for tlui in self:
@@ -847,6 +861,9 @@ class TimelineUIs:
 
     def get_selected_time(self):
         return self.selected_time
+    
+    def get_loop_time(self):
+        return self.loop_time
 
     def get_timeline_uis(self):
         return sorted(list(self._timeline_uis))

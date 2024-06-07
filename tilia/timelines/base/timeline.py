@@ -370,7 +370,7 @@ class TimelineComponentManager(Generic[T, TC]):
         self._components.remove(component)
         bisect.insort_left(self._components, component)
 
-    def delete_component(self, component: TC) -> None:
+    def delete_component(self, component: TC, loop_remove = True) -> None:
         stop_listening_to_all(component)
         self._remove_from_components_set(component)
         post(
@@ -378,6 +378,7 @@ class TimelineComponentManager(Generic[T, TC]):
             self.timeline.KIND,
             self.timeline.id,
             component.id,
+            loop_remove
         )
 
     def clear(self):

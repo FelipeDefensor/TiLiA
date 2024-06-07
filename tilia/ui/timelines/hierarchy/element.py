@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QGraphicsScene,
     QGraphicsRectItem,
     QGraphicsTextItem,
+    QGraphicsDropShadowEffect
 )
 
 from .context_menu import HierarchyContextMenu
@@ -522,6 +523,9 @@ class HierarchyUI(TimelineUIElement):
             if not self.is_handle_shared(handle):
                 self.scene.removeItem(handle)
 
+    def on_loop_set(self, is_looping: bool) -> None:
+        self.body.on_loop_set(is_looping)
+
     @property
     def start_and_end_formatted(self) -> str:
         return (
@@ -634,6 +638,16 @@ class HierarchyBody(CursorMixIn, QGraphicsRectItem):
         self.setBrush(
             QColor(get_untinted_color(self.brush().color(), TINT_FACTOR_ON_SELECTION))
         )
+
+    def on_loop_set(self, is_looping: bool) -> None:
+        if is_looping:
+            effect = QGraphicsDropShadowEffect()
+            effect.setColor(QColor(get_tinted_color(self.brush().color(), 300)))
+            effect.setBlurRadius(40)
+            effect.setOffset(0)
+            self.setGraphicsEffect(effect)
+        else:
+            self.setGraphicsEffect(None)
 
     @staticmethod
     def get_rect(level: int, start_x: float, end_x: float, tl_height: float):

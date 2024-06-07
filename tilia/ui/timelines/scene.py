@@ -23,6 +23,7 @@ class TimelineScene(QGraphicsScene):
         self._setup_text_bg(left_margin)
         self._setup_text(text)
         self._setup_playback_line(left_margin)
+        self._setup_loop_box(left_margin, left_margin)
 
     def _setup_text(self, text: str):
         self.font = QFont()
@@ -53,6 +54,25 @@ class TimelineScene(QGraphicsScene):
 
     def set_playback_line_pos(self, x):
         self.playback_line.setLine(x, 0, x, self.height())
+
+    def _setup_loop_box(self, x_start, x_end):
+        pen = QPen()
+        pen.setColor(QColor("#20ff964f"))
+        pen.setWidth(0)
+
+        brush = QBrush(QColor("#20ff964f"))
+        
+        self.loop_box = self.addRect(x_start, 0, x_end - x_start, self.height(), pen, brush)
+
+        self.loop_box.setVisible(False)
+
+    def set_loop_box_position(self, x_start, x_end):
+        if x_end - x_start > 0:
+            self.loop_box.setRect(x_start, 0, x_end - x_start, self.height())
+            self.loop_box.setVisible(True)
+        
+        else:
+            self.loop_box.setVisible(False)
 
     def set_height(self, value):
         x, y, w, _ = self.sceneRect().getRect()

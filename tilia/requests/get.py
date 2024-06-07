@@ -33,6 +33,7 @@ class Get(Enum):
     FROM_USER_YES_OR_NO = auto()
     ID = auto()
     LEFT_MARGIN_X = auto()
+    LOOP_TIME = auto()
     MEDIA_CURRENT_TIME = auto()
     MEDIA_DURATION = auto()
     MEDIA_METADATA = auto()

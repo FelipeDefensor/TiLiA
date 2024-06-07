@@ -17,6 +17,8 @@ from PyQt6.QtWebEngineCore import QWebEngineSettings, QWebEngineUrlRequestInterc
 from tilia.media.player.base import MediaTimeChangeReason
 from tilia.requests import Post, post
 
+from tilia.ui.player import PlayerToolbarElement
+
 
 class PlayerTracker(QObject):
     def __init__(self, page, on_duration_available, set_current_time, set_is_playing, set_playback_rate):
@@ -26,22 +28,20 @@ class PlayerTracker(QObject):
         self.page = page
         self.set_is_playing = set_is_playing
         self.set_playback_rate = set_playback_rate
+        self.player_toolbar_enabled = False
 
     @pyqtSlot("float")
     def on_new_time(self, time):
         self.set_current_time(time)
-        post(
-            Post.PLAYER_CURRENT_TIME_CHANGED,
-            time,
-            MediaTimeChangeReason.PLAYBACK,
-        )
 
     @pyqtSlot("int")
     def on_player_state_change(self, state):
         if state == self.State.UNSTARTED.value:
             self.page.runJavaScript("getDuration()", self.on_duration_available)
         elif state == self.State.PLAYING.value:
-            post(Post.PLAYER_ENABLE_CONTROLS)
+            if not self.player_toolbar_enabled:
+              post(Post.PLAYER_ENABLE_CONTROLS)
+              self.player_toolbar_enabled = True
             self.set_is_playing(True)
         else:
             self.set_is_playing(False)
@@ -107,7 +107,7 @@ class YouTubePlayer(Player):
         self.shared_object = PlayerTracker(
             self.view.page(),
             self.on_media_duration_available,
-            functools.partial(setattr, self, "current_time"),
+            self.set_current_time,
             self.set_is_playing,
             self._engine_set_playback_rate
         )
@@ -142,6 +142,16 @@ class YouTubePlayer(Player):
 
         super().on_media_duration_available(duration)
 
+    def set_current_time(self, time):
+        self.check_seek_outside_loop(time)
+        if self.check_not_loop_back(time):
+            self.current_time = time
+            post(
+                Post.PLAYER_CURRENT_TIME_CHANGED,
+                time,
+                MediaTimeChangeReason.PLAYBACK,
+            )
+
     def retry_get_duration(self):
         timer = QTimer()
         timer.singleShot(500, self._engine_get_media_duration)
@@ -152,6 +162,7 @@ class YouTubePlayer(Player):
 
     def set_is_playing(self, value):
         self.is_playing = value
+        post(Post.PLAYER_UI_UPDATE, PlayerToolbarElement.TOGGLE_PLAY_PAUSE, value)
 
     def _on_web_page_load_finished(self):
         self.is_web_page_loaded = True
@@ -200,6 +211,7 @@ class YouTubePlayer(Player):
 
     def _engine_unload_media(self):
         self.view.hide()
+        self.shared_object.player_toolbar_enabled = False
 
     def _engine_get_media_duration(self):
         self.view.page().runJavaScript(
@@ -226,5 +238,7 @@ class YouTubePlayer(Player):
         self.view.page().runJavaScript(f"tryPlaybackRate({playback_rate})")
 
     def _engine_set_playback_rate(self, playback_rate: float) -> None:
-        post(Post.PLAYER_PLAYBACK_RATE_SET, playback_rate)
+        post(Post.PLAYER_UI_UPDATE, PlayerToolbarElement.SPINBOX_PLAYBACK, playback_rate)
 
+    def _engine_loop(self, is_looping: bool) -> None:
+        self.view.page().runJavaScript(f"setLoop({1 if is_looping else 0})")

@@ -75,7 +75,7 @@
       }
 
       function loadVideo(id) {
-        player.loadVideoById(id)
+        player.loadPlaylist([id])
         return true
       }
 
@@ -121,6 +121,10 @@
 
       function onPlaybackRateChange(event) {
         backend.on_set_playback_rate(event.data)
+      }
+
+      function setLoop(isLooping) {
+        player.setLoop(isLooping)
       }
 
 </script>
