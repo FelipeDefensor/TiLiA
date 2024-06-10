@@ -108,8 +108,7 @@ class PlayerToolbar(QToolBar):
 
         play_toggle_icon = QIcon()
         play_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "play15.png"))), QIcon.Mode.Normal, QIcon.State.Off)
-        play_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "pause15.png"))), QIcon.Mode.Normal, QIcon.State.On)
-        
+        play_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "pause15.png"))), QIcon.Mode.Normal, QIcon.State.On)        
         self.play_toggle_action = QAction(self)
         self.play_toggle_action.setText("Play / Pause")
         self.play_toggle_action.triggered.connect(lambda checked: on_play_toggle(checked))
@@ -141,8 +140,8 @@ class PlayerToolbar(QToolBar):
             self.volume_toggle_action.blockSignals(False)
 
         volume_toggle_icon = QIcon()
-        # volume_toggle_icon.addPixmap(QStyle.standardIcon(self, QStyle.StandardPixmap.SP_MediaVolume), QIcon.Mode.Normal, QIcon.State.On)
-        # volume_toggle_icon.addPixmap(QStyle.standardIcon(QStyle(), QStyle.StandardPixmap.SP_MediaVolumeMuted), QIcon.Mode.Normal, QIcon.State.Off)
+        volume_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "mute15.png"))), QIcon.Mode.Normal, QIcon.State.On)
+        volume_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "unmute15.png"))), QIcon.Mode.Normal, QIcon.State.Off)
         self.volume_toggle_action = QAction(self)
         self.volume_toggle_action.setText("Toggle Volume")
         self.volume_toggle_action.triggered.connect(lambda checked: on_volume_toggle(checked))
