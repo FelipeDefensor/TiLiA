@@ -185,6 +185,11 @@ class PlayerToolbar(QToolBar):
         self.volume_slider.setValue(100)
         self.volume_slider.setToolTip("Volume")
         self.volume_slider.valueChanged.connect(lambda value: on_volume_slide(value))
+        self.volume_slider.setStyleSheet(
+            "QSlider {margin-right: 4px;}"
+            "QSlider::groove:horizontal { height: 4px; background: grey;}" + 
+            "QSlider::handle::horizontal { background: grey; border: 2px solid #ff964f; width: 8px; margin: -4px 0; border-radius: 6px;}"
+        )
         self.addWidget(self.volume_slider)
     
     def add_playback_rate_spinbox(self):
