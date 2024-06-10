@@ -128,19 +128,13 @@ class PlayerToolbar(QToolBar):
         def on_play_toggle(checked: bool) -> None:
             post(Post.PLAYER_TOGGLE_PLAY_PAUSE, checked)
 
-        def update_tooltip() -> None:            
-            self.play_toggle_action.blockSignals(True)
-            self.play_toggle_action.setToolTip("Pause (Space)" if self.play_toggle_action.isChecked() else "Play (Space)")
-            self.play_toggle_action.blockSignals(False)
-
         play_toggle_icon = QIcon()
         play_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "play15.png"))), QIcon.Mode.Normal, QIcon.State.Off)
         play_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "pause15.png"))), QIcon.Mode.Normal, QIcon.State.On)        
         self.play_toggle_action = QAction(self)
         self.play_toggle_action.setText("Play / Pause")
         self.play_toggle_action.triggered.connect(lambda checked: on_play_toggle(checked))
-        self.play_toggle_action.changed.connect(update_tooltip)
-        self.play_toggle_action.setToolTip("Play (Space)")
+        self.play_toggle_action.setToolTip("Play / Pause (Space)")
         self.play_toggle_action.setCheckable(True)
         self.play_toggle_action.setIcon(play_toggle_icon)
         self.play_toggle_action.setShortcut("Space")
@@ -171,20 +165,14 @@ class PlayerToolbar(QToolBar):
             post(Post.PLAYER_VOLUME_MUTE, checked)
             self.volume_slider.setEnabled(not checked)
 
-        def on_changed() -> None:
-            self.volume_toggle_action.blockSignals(True)
-            self.volume_toggle_action.setToolTip("Unmute"if self.volume_toggle_action.isChecked() else "Mute")
-            self.volume_toggle_action.blockSignals(False)
-
         volume_toggle_icon = QIcon()
         volume_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "mute15.png"))), QIcon.Mode.Normal, QIcon.State.On)
         volume_toggle_icon.addPixmap(QPixmap(str(Path("ui", "img", "unmute15.png"))), QIcon.Mode.Normal, QIcon.State.Off)
         self.volume_toggle_action = QAction(self)
         self.volume_toggle_action.setText("Toggle Volume")
         self.volume_toggle_action.triggered.connect(lambda checked: on_volume_toggle(checked))
-        self.volume_toggle_action.changed.connect(on_changed)
         self.volume_toggle_action.setIcon(volume_toggle_icon)
-        self.volume_toggle_action.setToolTip("Mute")
+        self.volume_toggle_action.setToolTip("Mute / Unmute")
         self.volume_toggle_action.setCheckable(True)
         self.addAction(self.volume_toggle_action)
     
