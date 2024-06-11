@@ -8,6 +8,7 @@ from PyQt6.QtCore import Qt, QUrl, pyqtSlot, QObject, QTimer, QByteArray
 from PyQt6.QtWebChannel import QWebChannel
 
 import tilia.constants
+import tilia.errors
 
 from tilia.media.player import Player
 
@@ -48,11 +49,7 @@ class PlayerTracker(QObject):
 
     @pyqtSlot(str)
     def display_error(self, message: str) -> None:
-        post(
-            Post.DISPLAY_ERROR,
-            title="YouTube Player",
-            message=message
-        )
+        tilia.errors.display(tilia.errors.YOUTUBE_PLAYER_ERROR, message + f"\nVideo ID: {self.video_id}")
 
     @pyqtSlot("float")
     def on_set_playback_rate(self, playback_rate: float):
@@ -168,10 +165,10 @@ class YouTubePlayer(Player):
         self.is_web_page_loaded = True
 
     def _engine_load_media(self, media_path: str) -> bool:
-        video_id = self.get_id_from_url(media_path)
+        self.video_id = self.get_id_from_url(media_path)
 
         def load_video():
-            self.view.page().runJavaScript(f'loadVideo("{video_id}")')
+            self.view.page().runJavaScript(f'loadVideo("{self.video_id}")')
 
         if self.is_web_page_loaded:
             load_video()

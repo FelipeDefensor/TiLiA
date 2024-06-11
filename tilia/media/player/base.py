@@ -254,11 +254,7 @@ class Player(ABC):
         if self.loop_elements: 
             connected, [start_time, end_time] = self._check_loop_continuity()
             if not connected:
-                post(
-                    Post.DISPLAY_ERROR,
-                    "Looping Error",
-                    "Selected Hierarchies are disjunct."
-                )
+                tilia.errors.display(tilia.errors.LOOP_DISJUNCT)
                 self.is_looping = False
                 self._remove_loop_elements_UI()
                 post(Post.PLAYER_UI_UPDATE, PlayerToolbarElement.TOGGLE_LOOP, False)

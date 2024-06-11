@@ -15,6 +15,8 @@ from tilia.ui.actions import TiliaAction
 from tilia.ui.format import format_media_time
 from tilia.requests import Post, post, listen, stop_listening_to_all, get, Get
 
+import tilia.errors
+
 from pathlib import Path
 
 from enum import Enum, auto
@@ -108,7 +110,7 @@ class PlayerToolbar(QToolBar):
                 self.pr_spinbox_update_silent()
                 return
             case _:
-                post(Post.DISPLAY_ERROR, "Updating Player Toolbar", "Unknown element selected.")
+                tilia.errors.display(tilia.errors.PLAYER_TOOLBAR_ERROR, "Unknown element selected.")
 
         element.blockSignals(True)
         try:
@@ -117,7 +119,7 @@ class PlayerToolbar(QToolBar):
             else:
                 element.setValue(value)
         except:
-            post(Post.DISPLAY_ERROR, "Updating Player Toolbar", f"Unable to set {element_to_set} with value {value} of type {type(value)}.")
+            tilia.errors.display(tilia.errors.PLAYER_TOOLBAR_ERROR, f"Unable to set {element_to_set} with value {value} of type {type(value)}.")
         element.blockSignals(False)
 
     def destroy(self):
