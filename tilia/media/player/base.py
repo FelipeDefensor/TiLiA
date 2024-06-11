@@ -21,7 +21,6 @@ from tilia.requests import (
     get,
     stop_serving_all,
 )
-from tilia.ui.strings import NO_MEDIA_LOADED_ERROR_TITLE, NO_MEDIA_LOADED_ERROR_MESSAGE
 from tilia.timelines.timeline_kinds import TimelineKind
 
 from tilia.ui.player import PlayerToolbarElement
@@ -145,14 +144,6 @@ class Player(ABC):
         post(Post.PLAYER_MEDIA_UNLOADED)
 
     def toggle_play(self, toggle_is_playing: bool):
-        if not self.media_path:
-            post(
-                Post.DISPLAY_ERROR,
-                title=NO_MEDIA_LOADED_ERROR_TITLE,
-                message=NO_MEDIA_LOADED_ERROR_MESSAGE,
-            )
-            return
-
         if toggle_is_playing:
             if self.is_looping:
                 self.on_seek(self.loop_start)

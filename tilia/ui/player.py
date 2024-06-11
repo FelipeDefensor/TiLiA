@@ -1,5 +1,6 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QStackedWidget,
     QToolBar,
     QLabel,
     QSlider,
@@ -31,25 +32,9 @@ class PlayerToolbar(QToolBar):
 
         self.current_time_string = format_media_time(0)
         self.duration_string = format_media_time(0)
-
         self.last_playback_rate = 1.0
 
-        self.add_play_toggle()
-        self.stop_action = actions.get_qaction(TiliaAction.MEDIA_STOP)
-        self.addAction(self.stop_action)
-        self.add_loop_toggle()
-        self.add_time_label()
-
-        self.addSeparator()
-
-        self.add_volume_toggle()
-        self.add_volume_slider()
-
-        self.addSeparator()
-
-        self.add_playback_rate_spinbox()
-
-        self.setEnabled(False)
+        self._setup_controls()
 
     def _setup_requests(self):
         LISTENS = {
@@ -57,13 +42,37 @@ class PlayerToolbar(QToolBar):
             (Post.FILE_MEDIA_DURATION_CHANGED, self.on_media_duration_changed), 
             (Post.PLAYER_MEDIA_UNLOADED, self.on_media_unload), 
             (Post.PLAYER_STOPPED, self.on_stop), 
-            (Post.PLAYER_DISABLE_CONTROLS, self.on_disable_controls), 
-            (Post.PLAYER_ENABLE_CONTROLS, self.on_enable_controls),
+            (Post.PLAYER_UPDATE_CONTROLS, self.on_update_controls), 
             (Post.PLAYER_UI_UPDATE, self.on_ui_update_silent)
         }
 
         for post, callback in LISTENS:
             listen(self, post, callback)
+
+    def _setup_controls(self):
+        self.toolbar_stack = QStackedWidget()
+        self.status_label = QLabel("<i>Player disabled. Load file via '</i>File > Load Media File<i>' to start.</i>")
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.player_controls = QToolBar()
+        self.toolbar_stack.addWidget(self.status_label)
+        self.toolbar_stack.addWidget(self.player_controls)
+        self.toolbar_stack.setCurrentWidget(self.status_label)
+        self.addWidget(self.toolbar_stack)
+
+        self.add_play_toggle()
+        self.stop_action = actions.get_qaction(TiliaAction.MEDIA_STOP)
+        self.player_controls.addAction(self.stop_action)
+        self.add_loop_toggle()
+        self.add_time_label()
+
+        self.player_controls.addSeparator()
+
+        self.add_volume_toggle()
+        self.add_volume_slider()
+
+        self.player_controls.addSeparator()
+
+        self.add_playback_rate_spinbox()
 
     def on_player_current_time_changed(
         self, audio_time: float, *_
@@ -88,12 +97,17 @@ class PlayerToolbar(QToolBar):
     def update_time_string(self):
         self.time_label.setText(f"{self.current_time_string}/{self.duration_string}")
 
-    def on_disable_controls(self):
-        self.setEnabled(False)
-
-    def on_enable_controls(self):
-        self.reset()
-        self.setEnabled(True)
+    def on_update_controls(self, state):
+        match state:
+            case PlayerStatus.NO_MEDIA:
+                self.status_label.setText("<i>Player disabled. Load file via '</i>File > Load Media File<i>' to start.</i>")
+                self.toolbar_stack.setCurrentWidget(self.status_label)
+            case PlayerStatus.PLAYER_ENABLED:
+                self.reset()
+                self.toolbar_stack.setCurrentWidget(self.player_controls)
+            case PlayerStatus.WAITING_FOR_YOUTUBE:
+                self.status_label.setText("<i>Player disabled. Click on YouTube video to enable player.</i>")
+                self.toolbar_stack.setCurrentWidget(self.status_label)
 
     def on_ui_update_silent(self, element_to_set, value):
         match element_to_set:
@@ -140,7 +154,7 @@ class PlayerToolbar(QToolBar):
         self.play_toggle_action.setCheckable(True)
         self.play_toggle_action.setIcon(play_toggle_icon)
         self.play_toggle_action.setShortcut("Space")
-        self.addAction(self.play_toggle_action)
+        self.player_controls.addAction(self.play_toggle_action)
 
     def add_loop_toggle(self):
         def on_loop_changed(checked: bool) -> None:
@@ -155,12 +169,12 @@ class PlayerToolbar(QToolBar):
         self.loop_toggle_action.setIcon(loop_toggle_icon)
         self.loop_toggle_action.setToolTip("Toggle Loop")
         self.loop_toggle_action.setCheckable(True)
-        self.addAction(self.loop_toggle_action)
+        self.player_controls.addAction(self.loop_toggle_action)
 
     def add_time_label(self):
         self.time_label = QLabel(f"{self.current_time_string}/{self.duration_string}")
         self.time_label.setMargin(3)
-        self.addWidget(self.time_label)
+        self.player_controls.addWidget(self.time_label)
 
     def add_volume_toggle(self):
         def on_volume_toggle(checked: bool) -> None:
@@ -176,7 +190,7 @@ class PlayerToolbar(QToolBar):
         self.volume_toggle_action.setIcon(volume_toggle_icon)
         self.volume_toggle_action.setToolTip("Mute / Unmute")
         self.volume_toggle_action.setCheckable(True)
-        self.addAction(self.volume_toggle_action)
+        self.player_controls.addAction(self.volume_toggle_action)
     
     def add_volume_slider(self):
         def on_volume_slide(value: int) -> None:
@@ -192,7 +206,7 @@ class PlayerToolbar(QToolBar):
             "QSlider::groove:horizontal { height: 4px; background: grey;}" + 
             "QSlider::handle::horizontal { background: grey; border: 2px solid #ff964f; width: 8px; margin: -4px 0; border-radius: 6px;}"
         )
-        self.addWidget(self.volume_slider)
+        self.player_controls.addWidget(self.volume_slider)
     
     def add_playback_rate_spinbox(self):
         def on_playback_rate_changed(rate: float) -> None:
@@ -213,7 +227,7 @@ class PlayerToolbar(QToolBar):
         self.pr_spinbox.setToolTip("Playback Rate")
         self.pr_spinbox.setKeyboardTracking(False)
         self.pr_spinbox.valueChanged.connect(on_playback_rate_changed)
-        self.addWidget(self.pr_spinbox)
+        self.player_controls.addWidget(self.pr_spinbox)
 
     def pr_spinbox_update_silent(self) -> None:
         self.pr_spinbox.blockSignals(True)
@@ -231,9 +245,16 @@ class PlayerToolbar(QToolBar):
         self.pr_spinbox.setValue(1)
         self.blockSignals(False)
 
+
 class PlayerToolbarElement(Enum):
     TOGGLE_PLAY_PAUSE = auto()
     TOGGLE_LOOP = auto()
     TOGGLE_VOLUME = auto()
     SLIDER_VOLUME = auto()
     SPINBOX_PLAYBACK = auto()
+
+
+class PlayerStatus(Enum):
+    NO_MEDIA = auto()
+    PLAYER_ENABLED = auto()
+    WAITING_FOR_YOUTUBE = auto()

@@ -18,7 +18,7 @@ from PyQt6.QtWebEngineCore import QWebEngineSettings, QWebEngineUrlRequestInterc
 from tilia.media.player.base import MediaTimeChangeReason
 from tilia.requests import Post, post
 
-from tilia.ui.player import PlayerToolbarElement
+from tilia.ui.player import PlayerToolbarElement, PlayerStatus
 
 
 class PlayerTracker(QObject):
@@ -38,10 +38,11 @@ class PlayerTracker(QObject):
     @pyqtSlot("int")
     def on_player_state_change(self, state):
         if state == self.State.UNSTARTED.value:
+            post(Post.PLAYER_UPDATE_CONTROLS, PlayerStatus.WAITING_FOR_YOUTUBE)
             self.page.runJavaScript("getDuration()", self.on_duration_available)
         elif state == self.State.PLAYING.value:
             if not self.player_toolbar_enabled:
-              post(Post.PLAYER_ENABLE_CONTROLS)
+              post(Post.PLAYER_UPDATE_CONTROLS, PlayerStatus.PLAYER_ENABLED)
               self.player_toolbar_enabled = True
             self.set_is_playing(True)
         else:
@@ -217,7 +218,7 @@ class YouTubePlayer(Player):
 
     def _engine_exit(self):
         del self.view
-        post(Post.PLAYER_DISABLE_CONTROLS)
+        post(Post.PLAYER_UPDATE_CONTROLS, PlayerStatus.NO_MEDIA)
 
     def _engine_get_current_time(self) -> float:
         return self.current_time
