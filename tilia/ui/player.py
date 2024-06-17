@@ -200,11 +200,12 @@ class PlayerToolbar(QToolBar):
         self.volume_slider.setMaximum(100)
         self.volume_slider.setValue(100)
         self.volume_slider.setToolTip("Volume")
+        self.volume_slider.setMaximumWidth(70)
         self.volume_slider.valueChanged.connect(lambda value: on_volume_slide(value))
         self.volume_slider.setStyleSheet(
             "QSlider {margin-right: 4px;}"
-            "QSlider::groove:horizontal { height: 4px; background: grey;}" + 
-            "QSlider::handle::horizontal { background: grey; border: 2px solid #ff964f; width: 8px; margin: -4px 0; border-radius: 6px;}"
+            "QSlider::groove:horizontal { height: 4px; background: grey;}"
+            "QSlider::handle::horizontal { background: grey; border: 2px solid grey; width: 8px; margin: -4px 0; border-radius: 6px;}"
         )
         self.player_controls.addWidget(self.volume_slider)
     
