@@ -11,6 +11,7 @@ DEFAULT_SETTINGS = {
         "window_x": 20,
         "window_y": 10,
         "timeline_bg": "#EEE",
+        "loop_box_shade": "#c0c0c0c0",
     },
     "auto-save": {"max_saved_files": 100, "interval": 300},
     "media_metadata": {
