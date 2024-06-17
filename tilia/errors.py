@@ -53,7 +53,7 @@ HIERARCHY_SPLIT_FAILED = Error("Split hierarchy", "Split failed: {}")
 COMPONENTS_COPY_ERROR = Error("Copy components error", "{}")
 COMPONENTS_LOAD_ERROR = Error("Load components error", "Some components were not loaded. The following errors occured:\n{}")
 COMPONENTS_PASTE_ERROR = Error("Paste components error", "{}")
-LOOP_DISJUNCT = Error("Loop Selection Error", "Selected Hierarchies are disjunct.")
+LOOP_DISJUNCT = Error("Loop Selection Error", "Selected Hierarchies are not adjacent.")
 PLAYER_TOOLBAR_ERROR = Error("Updating Player Toolbar", "{}")
 YOUTUBE_PLAYER_ERROR = Error("Youtube Player Error", "{}")
 
