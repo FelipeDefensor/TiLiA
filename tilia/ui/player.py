@@ -121,7 +121,7 @@ class PlayerToolbar(QToolBar):
                 element = self.volume_slider
             case PlayerToolbarElement.SPINBOX_PLAYBACK:
                 self.last_playback_rate = value
-                self.pr_spinbox_update_silent()
+                self.playback_rate_spinbox_update_silent()
                 return
             case _:
                 tilia.errors.display(tilia.errors.PLAYER_TOOLBAR_ERROR, "Unknown element selected.")
@@ -214,27 +214,27 @@ class PlayerToolbar(QToolBar):
             post(Post.PLAYER_PLAYBACK_RATE_TRY, rate)
 
             if get(Get.MEDIA_TYPE) == "youtube":
-                self.pr_spinbox_update_silent()
+                self.playback_rate_spinbox_update_silent()
 
             else:
                 self.last_playback_rate = rate
 
-        self.pr_spinbox = QDoubleSpinBox()
-        self.pr_spinbox.setMinimum(0)
-        self.pr_spinbox.setValue(1.0)
-        self.pr_spinbox.setSingleStep(0.25)
-        self.pr_spinbox.setFixedWidth(self.pr_spinbox.height() // 8)
-        self.pr_spinbox.setSuffix(" x")
-        self.pr_spinbox.setToolTip("Playback Rate")
-        self.pr_spinbox.setKeyboardTracking(False)
-        self.pr_spinbox.valueChanged.connect(on_playback_rate_changed)
-        self.player_controls.addWidget(self.pr_spinbox)
+        self.playback_rate_spinbox = QDoubleSpinBox()
+        self.playback_rate_spinbox.setMinimum(0)
+        self.playback_rate_spinbox.setValue(1.0)
+        self.playback_rate_spinbox.setSingleStep(0.25)
+        self.playback_rate_spinbox.setFixedWidth(self.playback_rate_spinbox.height() // 8)
+        self.playback_rate_spinbox.setSuffix(" x")
+        self.playback_rate_spinbox.setToolTip("Playback Rate")
+        self.playback_rate_spinbox.setKeyboardTracking(False)
+        self.playback_rate_spinbox.valueChanged.connect(on_playback_rate_changed)
+        self.player_controls.addWidget(self.playback_rate_spinbox)
 
-    def pr_spinbox_update_silent(self) -> None:
-        self.pr_spinbox.blockSignals(True)
-        self.pr_spinbox.clearFocus()
-        self.pr_spinbox.setValue(self.last_playback_rate)
-        self.pr_spinbox.blockSignals(False)
+    def playback_rate_spinbox_update_silent(self) -> None:
+        self.playback_rate_spinbox.blockSignals(True)
+        self.playback_rate_spinbox.clearFocus()
+        self.playback_rate_spinbox.setValue(self.last_playback_rate)
+        self.playback_rate_spinbox.blockSignals(False)
 
     def reset(self):
         self.blockSignals(True)
@@ -243,7 +243,7 @@ class PlayerToolbar(QToolBar):
         self.volume_slider.setValue(100)
         self.loop_toggle_action.setChecked(False)
         self.last_playback_rate = 1
-        self.pr_spinbox.setValue(1)
+        self.playback_rate_spinbox.setValue(1)
         self.blockSignals(False)
 
 
