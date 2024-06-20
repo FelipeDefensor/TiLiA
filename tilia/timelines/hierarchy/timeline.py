@@ -425,8 +425,9 @@ class HierarchyTLComponentManager(TimelineComponentManager):
         success, reason = _validate_split(unit_to_split, split_time)
         if not success:
             return success, reason
-
-        self.delete_component(unit_to_split, loop_remove = False)
+        
+        post(Post.LOOP_IGNORE_COMPONENT, self.timeline.id, unit_to_split.id)
+        self.delete_component(unit_to_split)
 
         left_unit, fail_reason = self.timeline.create_timeline_component(
             kind=ComponentKind.HIERARCHY,
@@ -544,7 +545,8 @@ class HierarchyTLComponentManager(TimelineComponentManager):
             return success, reason
 
         for unit in hierarchies:
-            self.delete_component(unit, loop_remove = False)
+            post(Post.LOOP_IGNORE_COMPONENT, self.timeline.id, unit.id)
+            self.delete_component(unit)
 
         merger_unit, fail_reason = self.timeline.create_timeline_component(
             kind=ComponentKind.HIERARCHY,
