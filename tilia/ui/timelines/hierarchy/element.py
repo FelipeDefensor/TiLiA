@@ -12,7 +12,6 @@ from PyQt6.QtWidgets import (
     QGraphicsScene,
     QGraphicsRectItem,
     QGraphicsTextItem,
-    QGraphicsDropShadowEffect
 )
 
 from .context_menu import HierarchyContextMenu
@@ -127,6 +126,7 @@ class HierarchyUI(TimelineUIElement):
         self._setup_body()
         self._setup_label()
         self._setup_comments_icon()
+        self._setup_loop_icon()
         self._setup_body_handles()
         self._setup_frame_handles()
 
@@ -219,6 +219,7 @@ class HierarchyUI(TimelineUIElement):
             self.body,
             self.label,
             self.comments_icon,
+            self.loop_icon,
             self.start_handle,
             self.end_handle,
             self.pre_start_handle,
@@ -273,6 +274,7 @@ class HierarchyUI(TimelineUIElement):
     def update_position(self):
         self.update_body_position()
         self.update_comments_icon_position()
+        self.update_loop_icon_position()
         self.update_label_position()
         self.update_label()
         self.update_body_handles_position()
@@ -289,6 +291,11 @@ class HierarchyUI(TimelineUIElement):
     def update_comments_icon_position(self):
         self.comments_icon.set_position(
             self.end_x, self.timeline_ui.get_data("height"), self.get_data("level")
+        )
+
+    def update_loop_icon_position(self):
+        self.loop_icon.set_position(
+            self.start_x, self.timeline_ui.get_data("height"), self.get_data("level")
         )
 
     def update_label_position(self):
@@ -365,6 +372,13 @@ class HierarchyUI(TimelineUIElement):
         )
         self.scene.addItem(self.comments_icon)
         self.comments_icon.setVisible(bool(self.get_data("comments")))
+
+    def _setup_loop_icon(self):
+        self.loop_icon= HierarchyLoopIcon(
+            self.start_x, self.timeline_ui.get_data("height"), self.get_data("level")
+        )
+        self.scene.addItem(self.loop_icon)
+        self.loop_icon.setVisible(False)
 
     def _setup_body_handles(self):
         """If there are already markers at start or end position,
@@ -524,7 +538,7 @@ class HierarchyUI(TimelineUIElement):
                 self.scene.removeItem(handle)
 
     def on_loop_set(self, is_looping: bool) -> None:
-        self.body.on_loop_set(is_looping)
+        self.loop_icon.setVisible(is_looping)
 
     @property
     def start_and_end_formatted(self) -> str:
@@ -639,16 +653,6 @@ class HierarchyBody(CursorMixIn, QGraphicsRectItem):
             QColor(get_untinted_color(self.brush().color(), TINT_FACTOR_ON_SELECTION))
         )
 
-    def on_loop_set(self, is_looping: bool) -> None:
-        if is_looping:
-            effect = QGraphicsDropShadowEffect()
-            effect.setColor(QColor(get_tinted_color(self.brush().color(), 300)))
-            effect.setBlurRadius(40)
-            effect.setOffset(0)
-            self.setGraphicsEffect(effect)
-        else:
-            self.setGraphicsEffect(None)
-
     @staticmethod
     def get_rect(level: int, start_x: float, end_x: float, tl_height: float):
         x0 = start_x + HierarchyUI.X_OFFSET
@@ -734,4 +738,42 @@ class HierarchyCommentsIcon(CursorMixIn, QGraphicsTextItem):
 
     def set_position(self, end_x, tl_height, level):
         self.setPos(self.get_point(end_x, tl_height, level))
+        self.setZValue(level + 1)
+
+class HierarchyLoopIcon(QGraphicsTextItem):
+    ICON = "↺"
+    BOTTOM_MARGIN = 3
+    LEFT_MARGIN = 3
+
+    def __init__(
+        self,
+        start_x: float,
+        tl_height: int,
+        level: int,
+    ):
+        super().__init__()
+        self.setup_font()
+        self.setPlainText(self.ICON)
+        self.set_position(start_x, tl_height, level)
+
+    def setup_font(self):
+        font = QFont("Arial", 12)
+        self.setFont(font)
+        self.setDefaultTextColor(QColor("black"))
+
+    def get_point(self, start_x: float, tl_height, level):
+        x = start_x + self.LEFT_MARGIN
+        y = (
+            tl_height
+            - HierarchyUI.Y_OFFSET
+            - (
+                HierarchyUI.BASE_HEIGHT
+                + ((level - 1) * HierarchyUI.X_INCREMENT_PER_LVL)
+            )
+            - self.BOTTOM_MARGIN
+        )
+        return QPointF(x, y)
+
+    def set_position(self, start_x, tl_height, level):
+        self.setPos(self.get_point(start_x, tl_height, level))
         self.setZValue(level + 1)
