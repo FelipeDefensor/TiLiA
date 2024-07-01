@@ -425,7 +425,8 @@ class HierarchyTLComponentManager(TimelineComponentManager):
         success, reason = _validate_split(unit_to_split, split_time)
         if not success:
             return success, reason
-
+        
+        post(Post.LOOP_IGNORE_COMPONENT, self.timeline.id, unit_to_split.id)
         self.delete_component(unit_to_split)
 
         left_unit, fail_reason = self.timeline.create_timeline_component(
@@ -474,6 +475,12 @@ class HierarchyTLComponentManager(TimelineComponentManager):
             )
 
         pass_on_attributes()
+
+        post(
+            Post.HIERARCHY_MERGE_SPLIT_DONE,
+            [(left_unit.timeline.id, left_unit.id), (right_unit.timeline.id, right_unit.id)],
+            [(unit_to_split.timeline.id, unit_to_split.id)]
+        )
 
         return True, ""
 
@@ -538,6 +545,7 @@ class HierarchyTLComponentManager(TimelineComponentManager):
             return success, reason
 
         for unit in hierarchies:
+            post(Post.LOOP_IGNORE_COMPONENT, self.timeline.id, unit.id)
             self.delete_component(unit)
 
         merger_unit, fail_reason = self.timeline.create_timeline_component(
@@ -563,10 +571,17 @@ class HierarchyTLComponentManager(TimelineComponentManager):
             merger_children += unit.children
 
         self._update_genealogy(merger_unit, merger_children)
+
+        post(
+            Post.HIERARCHY_MERGE_SPLIT_DONE,
+            [(merger_unit.timeline.id, merger_unit.id)],
+            [(hierarchy.timeline.id, hierarchy.id) for hierarchy in hierarchies]
+        )
+
         return True, ""
 
-    def delete_component(self, component: Hierarchy) -> None:
-        super().delete_component(component)
+    def delete_component(self, component: Hierarchy, **kwargs) -> None:
+        super().delete_component(component, **kwargs)
 
         self._update_genealogy_after_deletion(component)
 

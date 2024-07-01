@@ -57,7 +57,6 @@ class TiliaAction(Enum):
     MARKER_DELETE = auto()
     MEDIA_LOAD_LOCAL = auto()
     MEDIA_STOP = auto()
-    MEDIA_TOGGLE_PLAY_PAUSE = auto()
     METADATA_WINDOW_OPEN = auto()
     SETTINGS_WINDOW_OPEN = auto()
     TIMELINES_AUTO_SCROLL_ENABLE = auto()
@@ -379,9 +378,6 @@ taction_to_params = {
         Post.WINDOW_ABOUT_OPEN, "About...", "", ""
     ),
     TiliaAction.MEDIA_STOP: ActionParams(Post.PLAYER_STOP, "Stop", "stop15", ""),
-    TiliaAction.MEDIA_TOGGLE_PLAY_PAUSE: ActionParams(
-        Post.PLAYER_TOGGLE_PLAY_PAUSE, "Play/pause", "playpause", "Space"
-    ),
     TiliaAction.INSPECT_WINDOW_CLOSE: ActionParams(
         Post.WINDOW_INSPECT_CLOSE, "Close", "", ""
     ),

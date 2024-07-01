@@ -27,7 +27,9 @@
       function onYouTubeIframeAPIReady() {
         player = new YT.Player('yt-player-iframe', {
             events: {
-              'onStateChange': onPlayerStateChange
+              'onStateChange': onPlayerStateChange,
+              'onError': onError,
+              'onPlaybackRateChange': onPlaybackRateChange
             }
         });
       }
@@ -44,12 +46,36 @@
         }
       }
 
+      function onError(event) {
+        switch(event.data) {
+          case 2: 
+            backend.display_error("The request contains an invalid parameter value. For example, this error occurs if you specify a video ID that does not have 11 characters, or if the video ID contains invalid characters, such as exclamation points or asterisks.")
+            break;
+
+          case 5:
+            backend.display_error("The requested content cannot be played in an HTML5 player or another error related to the HTML5 player has occurred.")
+            break;
+
+          case 100:
+            backend.display_error("The video requested was not found. This error occurs when a video has been removed (for any reason) or has been marked as private.")
+            break;
+
+          case 101:
+          case 150:
+            backend.display_error("The owner of the requested video does not allow it to be played in embedded players.")
+            break;
+
+          default:
+            backend.display_error("Error code: ${event.data}.")
+        }
+      }
+
       function updateTime() {
         backend.on_new_time(player.getCurrentTime())
       }
 
       function loadVideo(id) {
-        player.loadVideoById(id)
+        player.loadPlaylist([id])
         return true
       }
 
@@ -75,6 +101,30 @@
 
       function stop() {
         return player.stopVideo()
+      }
+
+      function setVolume(volume) {
+        player.setVolume(volume)
+      }
+
+      function mute() {
+        player.mute()
+      }
+
+      function unMute() {
+        player.unMute()
+      }
+
+      function tryPlaybackRate(playbackRate) {
+        player.setPlaybackRate(playbackRate)
+      }
+
+      function onPlaybackRateChange(event) {
+        backend.on_set_playback_rate(event.data)
+      }
+
+      function setLoop(isLooping) {
+        player.setLoop(isLooping)
       }
 
 </script>
